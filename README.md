@@ -1,7 +1,7 @@
 # SFF
 
 
-
+open the sff_test.jl file which is complete code.
 in the main function you can see lots of parameter like:
     L = 20          
     Np = 4
