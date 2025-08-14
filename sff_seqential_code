@@ -1,5 +1,5 @@
 # Author: Osama
-
+#julia file
 using LinearAlgebra
 using Random
 using Distributions
@@ -7,6 +7,9 @@ using Plots
 using Printf
 using Combinatorics 
 using DelimitedFiles
+
+
+# this is how i build my hamiltonain
 
 function build_interacting_hamiltonian(L::Int, Np::Int, t1::Float64, t2::Float64, V::Float64,
                                        wij_disorder::Dict{Tuple{Int,Int},Float64})
@@ -89,11 +92,11 @@ end
 
 
 function main()
-    L = 20          
-    Np = 4
-    V = 2.0      
+    L = 20          # no of sites
+    Np = 4          # no of filling you want to take
+    V = 2.0         # potential you can vary
     τ = 2.0
-    Δ = - 0.1
+    Δ = - 0.1       # dimerization gap
     t1_top = (τ +  Δ) / 2.0
     t2_top = (τ -  Δ) / 2.0
     
