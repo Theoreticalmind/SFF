@@ -34,7 +34,7 @@ Main script for computing the SFF (sequential code).
 
 ### 2. `sff_plots.jl` – Plotting & Ramp Slope Extraction
 
-- Loads output data from `sff_test.jl`
+- Loads output data from `sff_test.jl`. Once you get dip-ramp-plateau(DRP) structure increase the N_samples like 1000 or 2000 . i put one sample picture of DRP.
 - Plots SFF as a function of time
 - Extracts ramp slope from the linear regime
 
@@ -42,7 +42,7 @@ Main script for computing the SFF (sequential code).
 
 ### 3. GPU Code for SFF
 
-Scripts for GPU-accelerated computation. Simply run and test for performance and accuracy of - `sff_gpu_test_1.jl`
+Scripts for GPU-accelerated computation. Simply run and test for performance and accuracy of - `sff_gpu_test_1.jl`, try to test this file check once this, because its a sparse matrix there are lots of techniques to solve that like syevd,syev,jacobi etc. One should check which technique one should use.when you get the data use `sff_plots.jl` to produce plot and ramp again.
 
 ---
 
