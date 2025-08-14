@@ -1,66 +1,76 @@
-# SFF - Interacting SSH Model
+# SFF – Interacting SSH Model
 
-This repository contains Julia scripts to compute and analyze the Spectral Form Factor (SFF) for an interacting SSH model with disorder and sublattice symmetry.We study both topological and trivial phases by varying the interaction strength 𝑉, filling 𝑁𝑝 and dimerization parameter Δ(positive & negative values with the same magnitude).
+This repository provides Julia scripts for computing and analyzing the **Spectral Form Factor (SFF)** in an interacting Su-Schrieffer-Heeger (SSH) model with disorder and sublattice symmetry. Both topological and trivial phases are investigated.
 
+---
 
-1.sff_test.jl - sff data generation :
- This is the main script for computing the sff . It's a sequantial code.
- Key Paramters:
-L = 20          # Number of lattice sites
-Np = 4          # Number of particles (filling)
-V = 2.0         # Interaction strength
-τ = 1.0         # Base hopping amplitude
-Δ = -0.1        # Dimerization parameter
+## Repository Structure
 
-t1_top = (τ + Δ) / 2.0   # Topological hopping t1
-t2_top = (τ - Δ) / 2.0   # Topological hopping t2
+### 1. `sff_test.jl` – SFF Data Generation
 
-NR = 10                  # Number of realizations per disorder config
-σ = 0.01                 # Disorder strength
-N_samples = 100          # Number of disorder samples
-time_points = 500
-time_array = exp10.(range(-1, 4, length=time_points))
-β = 0.5                  # Inverse temperature
+Main script for computing the SFF (sequential code).
 
-What to vary for experiments:
-. V — interaction potential
-. Np — particle filling (can be changed flexibly on GPU)
-. Δ test both +Δ and −Δ
+**Key Parameters:**
+- `L = 20`           # Number of lattice sites
+- `Np = 4`            # Number of particles (filling)
+- `V = 2.0`            # Interaction strength
+- `τ = 1.0`            # Base hopping amplitude
+- `Δ = -0.1`           # Dimerization parameter  
+- `t1_top = (τ + Δ) / 2.0` # Topological hopping
+- `t2_top = (τ - Δ) / 2.0` # Topological hopping
+- `NR = 10`            # Realizations per disorder config
+- `σ = 0.01`           # Disorder strength
+- `N_samples = 100`      # Number of disorder samples
+- `time_points = 500`
+- `time_array = exp10.(range(-1, 4, length=time_points))`
+- `β = 0.5`            # Inverse temperature
 
-2.sff_plots.jl - Plotting and Ramp Slope Extraction :
-. Reads the output data from sff_test.jl
-. Plots SFF vs time
-. Extracts ramp slope from the linear regime
+**Experimental Variables:**
+- `V` — Interaction potential
+- `Np` — Particle filling (flexible, can be changed on GPU)
+- `Δ` — Test both `+Δ` and `−Δ` values
 
+---
 
-This is the sequential code i generated and 
+### 2. `sff_plots.jl` – Plotting & Ramp Slope Extraction
 
-3. GPU code for SFF - you need to just test
+- Loads output data from `sff_test.jl`
+- Plots SFF as a function of time
+- Extracts ramp slope from the linear regime
 
+---
 
+### 3. GPU Code for SFF
 
+Scripts for GPU-accelerated computation. Simply run and test for performance and accuracy.
 
+---
 
+### 4. Eigenvalue Comparison Scripts (No Randomization in \( w_{ij} \))
 
+Compare eigenvalues obtained from:
+- **GPU-accelerated computation** (e.g., NVIDIA Ada 5000)
+- **Sequential CPU computation**
 
+**Scripts:**
+- `ssh_cuda_eig.jl`
+- `ssh_sq_eig.jl`
 
+**Data Files:**
+- `eigenvalues_L20_Np4_gpu.txt`
+- `eigenvalues_sq_20_4.txt`
+- `difference_plot_1.png` (scatter plot of absolute differences between eigenvalues)
 
+---
 
+## Usage
 
+1. **Run `sff_test.jl`** to generate SFF data.
+2. **Visualize and analyze** using `sff_plots.jl`.
+3. **Compare GPU and CPU eigenvalues** with the provided eigenvalue scripts and plot.
 
-4. Eigenvalue Comparison Scripts( without randomization w_ij) :
-These scripts compare eigenvalues obtained from:
-. GPU-accelerated computation (e.g., NVIDIA Ada 5000)
-. Sequential CPU computation
+---
 
-These scripts are:
+## Contact
 
-ssh_cuda_eig.jl & ssh_sq_eig.jl 
-
-and eigenvalue file is : eigenvalues_L20_Np4_gpu.txt & eigenvalues_sq_20_4.txt
-and one scattered plot of abs diff of these two eigenvalues : difference_plot_1.png
-
-
-
-
-
+For questions or collaboration, please contact [Theoreticalmind](https://github.com/Theoreticalmind).
