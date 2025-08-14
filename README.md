@@ -26,7 +26,7 @@ Main script for computing the SFF (sequential code).
 - `β = 0.5`            # Inverse temperature
 
 **Experimental Variables:**
-- `V` — Interaction potential
+- `V` — Interaction potential (vary it slowly near phase transition point)
 - `Np` — Particle filling (flexible, can be changed on GPU)
 - `Δ` — Test both `+Δ` and `−Δ` values
 
