@@ -42,7 +42,7 @@ Main script for computing the SFF (sequential code).
 
 ### 3. GPU Code for SFF
 
-Scripts for GPU-accelerated computation. Simply run and test for performance and accuracy.
+Scripts for GPU-accelerated computation. Simply run and test for performance and accuracy of - `sff_gpu_test_1.jl`
 
 ---
 
