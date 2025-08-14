@@ -3,7 +3,7 @@
 This repository contains Julia scripts to compute and analyze the Spectral Form Factor (SFF) for an interacting SSH model with disorder and sublattice symmetry.We study both topological and trivial phases by varying the interaction strength 𝑉, filling 𝑁𝑝 and dimerization parameter Δ(positive & negative values with the same magnitude).
 
 
-1.sff_test.jl - sff data generation
+1.sff_test.jl - sff data generation :
  This is the main script for computing the sff . It's a sequantial code.
  Key Paramters:
 L = 20          # Number of lattice sites
@@ -27,7 +27,7 @@ What to vary for experiments:
 . Np — particle filling (can be changed flexibly on GPU)
 . Δ test both +Δ and −Δ
 
-2.sff_plots.jl - Plotting and Ramp Slope Extraction
+2.sff_plots.jl - Plotting and Ramp Slope Extraction :
 . Reads the output data from sff_test.jl
 . Plots SFF vs time
 . Extracts ramp slope from the linear regime
@@ -48,14 +48,17 @@ This is the sequential code i generated and
 
 
 
-4. Eigenvalue Comparison Scripts( without randomization w_ij)
+4. Eigenvalue Comparison Scripts( without randomization w_ij) :
 These scripts compare eigenvalues obtained from:
 . GPU-accelerated computation (e.g., NVIDIA Ada 5000)
 . Sequential CPU computation
 
 These scripts are:
 
+ssh_cuda_eig.jl & ssh_sq_eig.jl 
 
+and eigenvalue file is : eigenvalues_L20_Np4_gpu.txt & eigenvalues_sq_20_4.txt
+and one scattered plot of abs diff of these two eigenvalues : difference_plot_1.png
 
 
 
