@@ -6,7 +6,7 @@ in the main function you can see lots of parameter like:
     L = 20          
     Np = 4
     V = 2.0      
-    τ = 2.0
+    τ = 1.0
     Δ = - 0.1
     t1_top = (τ +  Δ) / 2.0
     t2_top = (τ -  Δ) / 2.0
