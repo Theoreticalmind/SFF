@@ -1,0 +1,265 @@
+# Author: Osama
+
+using LinearAlgebra
+using Random
+using Distributions
+using Plots
+using Printf
+using Combinatorics 
+using DelimitedFiles
+
+function build_interacting_hamiltonian(L::Int, Np::Int, t1::Float64, t2::Float64, V::Float64,
+                                       wij_disorder::Dict{Tuple{Int,Int},Float64})
+
+    basis = [Tuple(c) for c in combinations(1:L, Np)]
+    basis_size = length(basis)
+    
+    state_to_index = Dict(state => i for (i, state) in enumerate(basis))
+
+    H_many_body = zeros(Float64, basis_size, basis_size)
+
+    for i in 1:basis_size
+        state = basis[i] 
+
+        interaction_energy = 0.0
+        for site_j in 1:(L-1)
+            if (site_j in state) && ((site_j + 1) in state)
+                interaction_energy -= V
+            end
+        end
+        H_many_body[i, i] = interaction_energy
+
+        for site_k in state
+            neighbor = site_k + 1
+            if neighbor <= L && !(neighbor in state)
+
+                hopping_t = (site_k % 2 == 1) ? t1 : t2
+                
+                new_state_tuple = Tuple(sort!([s for s in state if s != site_k] ∪ [neighbor]))
+                j = state_to_index[new_state_tuple]
+                
+                H_many_body[j, i] -= hopping_t
+                H_many_body[i, j] -= hopping_t
+            end
+        end
+
+        # --- Off-diagonal: Disorder hopping (w_ij) ---
+        for (sites, w_ij) in wij_disorder
+            site_a, site_b = sites
+
+            # SUBLATTICE SYMMETRY: only allow disorder between opposite sublattices
+            if isodd(site_a) == isodd(site_b)
+                continue
+            end
+
+            if (site_a in state) && !(site_b in state)
+                new_state_tuple = Tuple(sort!([s for s in state if s != site_a] ∪ [site_b]))
+                j = state_to_index[new_state_tuple]
+                H_many_body[j, i] -= w_ij
+                H_many_body[i, j] -= w_ij
+            elseif !(site_a in state) && (site_b in state)
+                new_state_tuple = Tuple(sort!([s for s in state if s != site_b] ∪ [site_a]))
+                j = state_to_index[new_state_tuple]
+                H_many_body[j, i] -= w_ij
+                H_many_body[i, j] -= w_ij
+            end
+        end
+    end
+
+    return Hermitian(H_many_body)
+end
+
+
+
+function calculate_sff(eigenvalues::Vector{Float64}, time_array::Vector{Float64}, β::Float64)::Vector{Float64}
+    E = reshape(eigenvalues, :, 1)
+    t = reshape(time_array, 1, :)
+
+    Z_plus = sum(exp.(-(β .+ 1im .* t) .* E), dims=1)
+    Z_minus = sum(exp.(-(β .- 1im .* t) .* E), dims=1)
+    Z_beta = sum(exp.(-β .* eigenvalues))
+
+    if Z_beta ≈ 0
+        return zeros(length(time_array))
+    end
+    
+    sff_val = vec((Z_plus .* Z_minus) ./ (Z_beta^2))
+    return real(sff_val)
+end
+
+
+function main()
+    L = 20          
+    Np = 4
+    V = 2.0      
+    τ = 2.0
+    Δ = - 0.1
+    t1_top = (τ +  Δ) / 2.0
+    t2_top = (τ -  Δ) / 2.0
+    
+
+
+    #t1_triv = 1.0
+    #t2_triv = 1.0  
+    
+    NR = 10        
+    σ = 0.01        
+    
+    N_samples = 100   
+    time_points = 500
+    time_array = exp10.(range(-1, 4, length=time_points))
+    β = 0.5
+
+    basis_size = binomial(L, Np)
+    println("--- Exact Diagonalization SFF Simulation ---")
+    println("System Size L=$L, Particle Number Np=$Np, Interaction V=$V")
+    println("Disorder Strength σ=$σ in NR=$NR sites")
+    println("Many-body Hilbert space dimension: $basis_size x $basis_size")
+    println("Averaging over $N_samples disorder samples...")
+
+    sff_top = zeros(length(time_array), N_samples)
+    sff_triv = zeros(length(time_array), N_samples)
+    
+    r_start = div(L - NR, 2) + 1
+    r_end = r_start + NR - 1
+    R_sites = r_start:r_end
+
+    for i in 1:N_samples
+        if i % 100 == 0; @printf("  Sample %d/%d\n", i, N_samples); end
+
+        wij_disorder = Dict{Tuple{Int,Int},Float64}()
+        for site_i in R_sites, site_j in R_sites
+            if site_i < site_j && isodd(site_i + site_j)
+                wij_disorder[(site_i, site_j)] = rand(Normal(0, σ / sqrt(NR)))
+            end
+        end
+    #@printf("  Disorder sites: %d, Non-zero disorder pairs: %d\n", NR, length(wij_disorder))
+        H_top = build_interacting_hamiltonian(L, Np, t1_top, t2_top, V, wij_disorder)
+        evals_top = eigvals(H_top)
+        sff_top[:, i] = calculate_sff(sort(evals_top), time_array, β)
+
+        #=H_triv = build_interacting_hamiltonian(L, Np, t1_triv, t2_triv, V, wij_disorder)
+        evals_triv = eigvals(H_triv)
+        sff_triv[:, i] = calculate_sff(sort(evals_triv), time_array, β)=#
+    end
+    avg_sff_top = vec(mean(sff_top, dims=2))
+    avg_sff_triv = vec(mean(sff_triv, dims=2))
+
+    #@printf(eigenvalues(H_top)[1:5])
+    #=ΔSFF = diff(avg_sff_top) ./ diff(time_array)
+    threshold = 1e-6
+    plateau_idx = findfirst(abs.(ΔSFF) .< threshold)
+
+    if isnothing(plateau_idx)
+        println("No plateau found with threshold = $threshold")
+    else
+        t_plateau = time_array[plateau_idx]
+        #println("Plateau starts around t ≈ ", t_plateau)
+    end
+
+
+    #slope of the ramp
+
+    t_min = 1e3
+    t_max = 1e7
+    ramp_idx = findall(t -> t_min <= t <= t_max, time_array)
+
+    if !isempty(ramp_idx)
+        t_ramp = time_array[ramp_idx]
+        sff_ramp = avg_sff_top[ramp_idx]
+
+        # Linear fit: SFF vs log10(t)
+        log_t = log10.(t_ramp)
+        log_F = log10.(sff_ramp)
+        X = hcat(ones(length(log_t)), log_t)
+        coeffs = X \log_F
+        slope = coeffs[2]
+        intercept = coeffs[1]
+
+        println("Ramp slope ≈ ", round(slope, digits=5))
+
+        # Optional: draw fit line on main plot
+        fit_vals = X * coeffs
+        plot!(t_ramp, fit_vals, lw=2, ls=:dot, color=:purple, label="Ramp slope ≈ $(round(slope,digits=3))")
+    else
+        println("Ramp region not found in given time window.")
+    end=#
+
+
+
+    #= --- Compute Ramp Slope ---
+    log_t = log10.(time_array)
+    log_F = log10.(avg_sff_top)
+    slope = diff(log_F) ./ diff(log_t)
+
+
+    ramp_sample_index = floor(Int, 0.2 * length(slope))
+    @printf("\nEstimated ramp slope ≈ %.2f (between points %d and %d)\n",
+            slope[ramp_sample_index], ramp_sample_index, ramp_sample_index+1)
+    @printf("\nEstimated ramp slope ≈ %.2f (between points %d and %d)\n",
+            #slope[plateau_start_index - 10], plateau_start_index-10, plateau_start_index-9)
+
+
+    # --- Identify Plateau ---
+    plateau_start_index = floor(Int, 0.95 * length(time_array))  # last 5%
+    plateau_value = mean(avg_sff_top[plateau_start_index:end])
+
+
+
+
+    @printf("Estimated plateau value ≈ %1e\n\n", plateau_value)
+
+
+
+    xticks = 10.0 .^ (-1:1:8)
+    yticks = 10.0 .^ (-5:1:1)
+    @show minimum(avg_sff_top)
+    @show maximum(avg_sff_top)
+    @show any(isnan.(avg_sff_top))
+    @show avg_sff_top[1:5]
+    @show time_array[1:5]
+    @show time_array[end-4:end]
+    plot(time_array, avg_sff_top,
+        label="Topological Phase", lw=2.5, color=:red,
+        xaxis=:log10, yaxis=:log10,
+        xlabel="Time (t)", ylabel="SFF F(t)",
+        title="Disorder-Averaged SFF β = $β ", 
+        legend=:topright, framestyle=:box,
+        size=(500, 400))    
+    #sff_plateau = avg_sff_top[plateau_idx]
+    #println("Estimated plateau value  ≈ ", sff_plateau)
+
+    #plot!(time_array, avg_sff_triv,label="Trivial (t₁=$t1_triv, t₂=$t2_triv)", lw=2.5, color=:royalblue, ls=:dash)
+    hline!([plateau_value], label="Plateau ≈ $(round(plateau_value, sigdigits=6))", ls=:dashdot, lc=:green, lw=1.5)
+    #hline!([sff_plateau], linestyle=:dashdot, color=:green, label="SFF plateau ≈ $sff_plateau", lw=1.5)=#
+
+
+
+
+
+    #  SAVE DATA TO FILE 
+    println("Saving data to file...")
+
+    filename = "/Users/photon/Downloads/my_projects_jl/sff/b0.5/sff_data_L$(L)_Np$(Np)_V$(V)_D$(Δ)_NR$(NR)_b$(β)_s$(σ).dat"
+
+
+    data_to_save = hcat(time_array, avg_sff_top)
+
+
+    open(filename, "w") do io
+        # Write the header
+        writedlm(io, ["Time" "SFF"], ',')
+        # Write the data
+        writedlm(io, data_to_save, ',')
+    end
+    println("Data successfully saved to $filename")
+    
+    
+    
+
+    #savefig("sff_plot_ED_L$(L)_V$(V).pdf")
+    #println("Plot saved to sff_plot_ED_L$(L)_V$(V).pdf")
+    #display(current())
+end
+
+main()
